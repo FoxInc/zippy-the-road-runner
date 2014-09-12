@@ -3,7 +3,7 @@
 #include "QTRSensors_teensy3.h"
 
 // PID Constants
-#define KP	2
+#define KP	100
 #define KI	0
 #define KD	80
 
