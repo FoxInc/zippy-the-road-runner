@@ -96,6 +96,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 	switch (direction)
 	{
 	case 'L':
+	case 'C':
 		LED_LEFT_ON;
 		//LED_RIGHT_OFF;
 		motorLeft.write(-speed);
@@ -105,6 +106,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 		LED_RIGHT_OFF;
 		break;
 
+	case 'D':
 	case 'R':
 		LED_RIGHT_ON;
 		//LED_LEFT_OFF;
@@ -232,107 +234,96 @@ void loop()
 	//followSegment();
 	//followSegment();
 	// MODE 0 for mapping mode
-	if (MODE == 0)
 		runMappingMode();
 
 	
-	// Mode 1 for simplifying path
-	//if (MODE == 1)
-		//simplifyPath();
-
-	// Mode 2 for running on simplified path
-	//if (MODE == 2)
-		//runSimplifiedPath();
-
 }
 
 void simplifyPath()
 {
-
-	unsigned char i;
+	sCounter = 0;
+	int i;
 
 	// Add the last square's turns as it is
-	for (i = 3; i > 0; i--)
+	for (i = 1; i <= 3; i++)
 		simplifiedPath[sCounter++] = path[pathCounter - 1 - i];
 
-	MODE = 2;
-
-	// Invert and simpify the remaining path
-	for (i = 0; i < pathCounter - 4; i++)
+	for (i = pathCounter - 5; i >= 0; i--)
 	{
-		// Start with left or right 90 intersections
-
 		switch (path[i])
 		{
-		case 'C':
-			if (path[i + 2] == 'L' && path[i + 3] == 'L' && path[i + 4] == 'L')
-			{
-				simplifiedPath[sCounter++] == 'R';
-				i += 4;
-			}
-
-			else
-				simplifiedPath[sCounter++] = 'D';
-
 		case 'D':
-			if (path[i + 2] == 'R' && path[i + 3] == 'R' && path[i + 4] == 'R')
-			{
-				simplifiedPath[sCounter++] == 'L';
-				i += 4;
-			}
-			else
-				simplifiedPath[sCounter++] = 'C';
+			simplifiedPath[sCounter++] = 'C';
 			break;
-
+		case 'C':
+			simplifiedPath[sCounter++] = 'D';
+			break;
 		case 'L':
 			simplifiedPath[sCounter++] = 'R';
 			break;
-
-		case 'R':
+		case 'R': 
 			simplifiedPath[sCounter++] = 'L';
 			break;
 		}
 
+
 	}
+
 
 	simplifiedPath[sCounter++] = 'J';
 	simplifiedPath[sCounter] = '\0';
 	sCounter = 0;
+
+	/*while (1)
+	{
+
+		BLUETOOTH.println(path);
+		BLUETOOTH.println(" :) ");
+		BLUETOOTH.println(simplifiedPath);
+	}*/
+
+	/*LED_LEFT_ON;
+	LED_RIGHT_ON;*/
+
+	while (1)
+	{
+		
+		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
+
+		followSegment();
+
+		position_ = readSensors();
+
+		// Starting of intersection
+		if (FOUND_LEFT())
+			foundLeft = 1;
+		if (FOUND_RIGHT())
+			foundRight = 1;
+
+		if (foundLeft || foundRight)
+		{
+			BLUETOOTH.println(simplifiedPath[sCounter]);
+			turn(simplifiedPath[sCounter++], SPEED_TURN, 200);
+
+		}
+
+		if (simplifiedPath[sCounter] == 'J')
+		{
+			motorLeft.write(-1024);
+			motorRight.write(-1024);
+			BLUETOOTH.println("END OF GAME !!");
+			delay(50);
+			DISABLE_STANDBY;
+
+			while (1)
+			{
+				LED_LEFT_ON;
+				LED_RIGHT_ON;
+			}
+		}
+	}
 }
 
-void runSimplifiedPath()
-{
-	unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-
-	followSegment();
-
-	position_ = readSensors();
-
-	// Starting of intersection
-	if (FOUND_LEFT())
-		foundLeft = 1;
-	if (FOUND_RIGHT())
-		foundRight = 1;
-
-	if (foundLeft || foundRight)
-	{
-		BLUETOOTH.println(simplifiedPath[sCounter]);
-		turn(simplifiedPath[sCounter++], SPEED_TURN, 200);
-
-	}
-
-	else if (simplifiedPath[sCounter] == 'J')
-	{
-		motorLeft.write(-1024);
-		motorRight.write(-1024);
-		BLUETOOTH.println("END OF GAME !!");
-		delay(50);
-		DISABLE_STANDBY;
-		while (1)
-			LED_LEFT_ON;
-		LED_RIGHT_ON;
-	}
-}
 
 void runMappingMode()
 {
@@ -387,26 +378,26 @@ void runMappingMode()
 			LED_LEFT_ON;
 			LED_RIGHT_ON;
 
-			BLUETOOTH.println(" :) ");
+			/*BLUETOOTH.println(" :) ");
 			BLUETOOTH.println(path);
-			BLUETOOTH.println("END OF MAPPING MODE");
+			BLUETOOTH.println("END OF MAPPING MODE");*/
 
-			DISABLE_STANDBY;
+			/*DISABLE_STANDBY;
 			motorLeft.stop();
-			motorRight.stop();
-			while (1)
+			motorRight.stop();*/
+			/*while (1)
 			{
 				BLUETOOTH.println(" :) ");
 				BLUETOOTH.println(path);
-			}
+			}*/
 
-				//motorLeft.write(512);
-				//motorRight.write(512);
+			//motorLeft.stop();
+			//motorRight.stop();
 				//delay(50);
 			LED_LEFT_OFF;
 			LED_RIGHT_OFF;
-			MODE = 1;
-			return;
+			simplifyPath();
+			while (1);
 		}
 
 		// T Junction

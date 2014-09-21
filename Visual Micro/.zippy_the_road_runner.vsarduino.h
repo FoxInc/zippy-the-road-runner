@@ -52,7 +52,6 @@ void initializeBot();
 void showSensorValues();
 //
 void simplifyPath();
-void runSimplifiedPath();
 void runMappingMode();
 void followSegment();
 
