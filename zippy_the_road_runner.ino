@@ -2,7 +2,7 @@
 #include <Motor.h>
 #include "QTRSensors_teensy3.h"
 
-#define BLUETOOTH Serial1
+#define BLUETOOTH Serial
 
 #define ON_LINE(sensor)((sensor<COMPARE))
 #define OVERSHOOT_LINE_TIME 50
@@ -236,12 +236,12 @@ void loop()
 
 	
 	// Mode 1 for simplifying path
-	if (MODE == 1)
-		simplifyPath();
+	//if (MODE == 1)
+		//simplifyPath();
 
 	// Mode 2 for running on simplified path
-	if (MODE == 2)
-		runSimplifiedPath();
+	//if (MODE == 2)
+		//runSimplifiedPath();
 
 }
 
@@ -375,11 +375,21 @@ void runMappingMode()
 			LED_LEFT_ON;
 			LED_RIGHT_ON;
 
+			BLUETOOTH.println(" :) ");
 			BLUETOOTH.println(path);
 			BLUETOOTH.println("END OF MAPPING MODE");
 
-				motorLeft.write(512);
-				motorRight.write(512);
+			DISABLE_STANDBY;
+			motorLeft.stop();
+			motorRight.stop();
+			while (1)
+			{
+				BLUETOOTH.println(" :) ");
+				BLUETOOTH.println(path);
+			}
+
+				//motorLeft.write(512);
+				//motorRight.write(512);
 				//delay(50);
 			LED_LEFT_OFF;
 			LED_RIGHT_OFF;
@@ -417,7 +427,7 @@ void runMappingMode()
 
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);
-		turn(direction, SPEED_TURN, 250);
+		turn(direction, SPEED_TURN, 300);
 
 		// L 90 Turn OR R 90 Turn
 		if ((foundLeft || foundRight) && !foundStraight)
