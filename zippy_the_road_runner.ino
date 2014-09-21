@@ -60,6 +60,7 @@ unsigned sCounter = 0;
 
 unsigned char MODE = 0;
 
+unsigned char flag = 0;
 
 // Initialize QTR8RC Sensor Array with sensor pins array
 // and number of sensors as second parameter
@@ -340,6 +341,17 @@ void runMappingMode()
 		followSegment();
 
 		//delay(20);
+
+		if (flag == 0)
+		{
+			turn('R', SPEED_TURN, 300);
+			path[pathCounter++] = 'D';
+			BLUETOOTH.println(path[pathCounter - 1]);
+			flag = 1;
+			return;
+
+
+		}
 
 		motorLeft.write(512);
 		motorRight.write(512);
