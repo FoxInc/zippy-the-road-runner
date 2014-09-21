@@ -96,7 +96,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 	{
 	case 'L':
 		LED_LEFT_ON;
-		LED_RIGHT_OFF;
+		//LED_RIGHT_OFF;
 		motorLeft.write(-speed);
 		motorRight.write(speed);
 		delay(delayTime);
@@ -106,7 +106,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 
 	case 'R':
 		LED_RIGHT_ON;
-		LED_LEFT_OFF;
+		//LED_LEFT_OFF;
 		motorLeft.write(speed);
 		motorRight.write(-speed);
 		delay(delayTime);
@@ -343,6 +343,7 @@ void runMappingMode()
 
 		motorLeft.write(512);
 		motorRight.write(512);
+		//delay(20);
 
 
 		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
@@ -354,7 +355,8 @@ void runMappingMode()
 		if (FOUND_RIGHT())
 			foundRight = 1;
 
-		delay(60);
+		delay(40);
+		position_ = readSensors();
 
 		if (FOUND_STRAIGHT())
 			foundStraight = 1;
@@ -404,7 +406,7 @@ void runMappingMode()
 		}
 
 		// R 90 Junction
-		if (!foundLeft && foundRight && !foundStraight)
+		if (!foundLeft && foundRight && foundStraight)
 		{
 			LED_RIGHT_ON;
 			LED_LEFT_ON;
@@ -415,7 +417,7 @@ void runMappingMode()
 
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);
-		turn(direction, SPEED_TURN, 200);
+		turn(direction, SPEED_TURN, 250);
 
 		// L 90 Turn OR R 90 Turn
 		if ((foundLeft || foundRight) && !foundStraight)
