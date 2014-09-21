@@ -101,6 +101,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 		motorRight.write(speed);
 		delay(delayTime);
 		LED_LEFT_OFF;
+		LED_RIGHT_OFF;
 		break;
 
 	case 'R':
@@ -109,6 +110,7 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 		motorLeft.write(speed);
 		motorRight.write(-speed);
 		delay(delayTime);
+		LED_LEFT_OFF;
 		LED_RIGHT_OFF;
 		break;
 
@@ -394,6 +396,8 @@ void runMappingMode()
 		// L 90 Junction
 		if (foundLeft && !foundRight && foundStraight)
 		{
+			LED_RIGHT_ON;
+			LED_LEFT_ON;
 			path[pathCounter++] = 'C';
 			BLUETOOTH.println(path[pathCounter - 1]);
 			foundLeft = 1;
@@ -402,6 +406,8 @@ void runMappingMode()
 		// R 90 Junction
 		if (!foundLeft && foundRight && !foundStraight)
 		{
+			LED_RIGHT_ON;
+			LED_LEFT_ON;
 			path[pathCounter++] = 'D';
 			BLUETOOTH.println(path[pathCounter - 1]);
 			foundRight = 1;
