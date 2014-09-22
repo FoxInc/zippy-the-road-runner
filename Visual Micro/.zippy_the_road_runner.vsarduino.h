@@ -51,8 +51,8 @@ int readSensors();
 void initializeBot();
 void showSensorValues();
 //
-void simplifyPath();
 void runMappingMode();
+void simplifyPath();
 void followSegment();
 
 #include "C:\Program Files (x86)\Arduino\hardware\teensy\cores\teensy3\arduino.h"

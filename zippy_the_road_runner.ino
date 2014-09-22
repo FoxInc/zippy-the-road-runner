@@ -15,7 +15,7 @@
 // MAX SPEED
 int SPEED_MAX = 2048;
 #define SPEED_CALIBRATE 786
-#define SPEED_TURN 1500
+#define SPEED_TURN 1024
 
 // Enable for white line on black background
 #define WHITE_ON_BLACK 1
@@ -118,6 +118,9 @@ void turn(char direction, unsigned int speed, unsigned short delayTime)
 		break;
 
 	case 'S':
+		motorLeft.write(speed);
+		motorRight.write(speed);
+		delay(delayTime);
 		break;
 	}
 
@@ -177,14 +180,12 @@ void setup()
 void initializeBot()
 {
 	// Calibrate sensors 
-	for (unsigned int i = 0; i < 75; i++)
+	for (unsigned int i = 0; i < 80; i++)
 	{
-		if (i == 0)
+		if (i == 0 || i == 55)
 			turn('L', SPEED_CALIBRATE, 20);
 		if (i == 20)
 			turn('R', SPEED_CALIBRATE, 20);
-		if (i == 55)
-			turn('L', SPEED_CALIBRATE, 20);
 
 		// Emitters on
 		//if (WHITE_ON_BLACK == 1 && EMITTER_ON == 1)
@@ -228,16 +229,55 @@ void showSensorValues()
 
 void loop()
 {
-
-	//delay(500);
-
-	//followSegment();
-	//followSegment();
-	// MODE 0 for mapping mode
 	runMappingMode();
-
-
 }
+
+void runMappingMode()
+{
+	while (1)
+	{
+		followSegment();
+
+		
+
+		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
+
+		position_ = readSensors();
+
+		if (FOUND_LEFT())
+			foundLeft = 1;
+		if (FOUND_RIGHT())
+			foundRight = 1;
+
+		if (foundLeft && foundRight)
+		{
+			turn('S', 1024, 80);
+
+			position_ = readSensors();
+
+			if (FOUND_STRAIGHT())
+			{
+				path[pathCounter++] = 'J';
+				path[pathCounter] = '\0';
+
+				LED_LEFT_ON;
+				LED_RIGHT_ON;
+				delay(20);
+				LED_LEFT_OFF;
+				LED_RIGHT_OFF;
+				simplifyPath();
+
+			}
+		}
+
+		char direction = selectTurn(foundLeft, foundRight, foundStraight);
+		turn(direction, SPEED_TURN, 200);
+
+		path[pathCounter++] = direction;
+		BLUETOOTH.println(path[pathCounter - 1]);
+	}
+}
+
 
 void simplifyPath()
 {
@@ -252,12 +292,6 @@ void simplifyPath()
 	{
 		switch (path[i])
 		{
-		/*case 'D':
-			simplifiedPath[sCounter++] = 'C';
-			break;
-		case 'C':
-			simplifiedPath[sCounter++] = 'D';
-			break;*/
 		case 'L':
 			simplifiedPath[sCounter++] = 'R';
 			break;
@@ -265,11 +299,7 @@ void simplifyPath()
 			simplifiedPath[sCounter++] = 'L';
 			break;
 		}
-
-
 	}
-
-
 
 	simplifiedPath[sCounter++] = 'J';
 	simplifiedPath[sCounter] = '\0';
@@ -298,6 +328,7 @@ void simplifyPath()
 		}
 	}
 	sCounter = 0;
+
 	/*while (1)
 		{
 
@@ -313,7 +344,7 @@ void simplifyPath()
 	{
 
 		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-		SPEED_MAX = 2040;
+		//SPEED_MAX = 2500;
 		followSegment();
 
 		position_ = readSensors();
@@ -327,18 +358,19 @@ void simplifyPath()
 		if (foundLeft || foundRight)
 		{
 			BLUETOOTH.println(simplifiedPath[sCounter]);
-			/*if (simplifiedPath[sCounter] == 'O')
-				sCounter++;*/
-			turn(simplifiedPath[sCounter++], SPEED_TURN, 150);
+			if (simplifiedPath[sCounter] == 'O')
+				sCounter++;
+			turn(simplifiedPath[sCounter++], SPEED_TURN, 200);
 
 		}
 
 		if (simplifiedPath[sCounter] == 'J')
 		{
-			//motorLeft.write(-1024);
-			//motorRight.write(-1024);
+
 			BLUETOOTH.println("END OF GAME !!");
-			delay(50);
+	
+			turn('S', 1024, 50);
+
 			DISABLE_STANDBY;
 
 			while (1)
@@ -351,334 +383,6 @@ void simplifyPath()
 }
 
 
-void runMappingMode()
-{
-	while (1)
-	{
-		followSegment();
-
-		//delay(20);
-
-		if (flag == 0)
-		{
-			turn('R', SPEED_TURN, 130);
-			path[pathCounter++] = 'R';
-			BLUETOOTH.println(path[pathCounter - 1]);
-			flag = 1;
-			return;
-
-
-		}
-
-		motorLeft.write(512);
-		motorRight.write(512);
-		//delay(20);
-
-
-		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-
-		position_ = readSensors();
-
-		if (FOUND_LEFT())
-			foundLeft = 1;
-		if (FOUND_RIGHT())
-			foundRight = 1;
-
-		if (foundLeft && foundRight)
-		{
-
-			delay(40);
-			position_ = readSensors();
-
-			if (FOUND_STRAIGHT())
-				foundStraight = 1;
-
-			if (foundLeft && foundRight && foundStraight)
-			{
-				path[pathCounter++] = 'J';
-				path[pathCounter] = '\0';
-
-
-				//motorLeft.write(-1024);
-				//motorRight.write(-1024);
-				//delay(20);
-				//DISABLE_STANDBY;
-
-				LED_LEFT_ON;
-				LED_RIGHT_ON;
-
-				/*BLUETOOTH.println(" :) ");
-				BLUETOOTH.println(path);
-				BLUETOOTH.println("END OF MAPPING MODE");*/
-
-				//DISABLE_STANDBY;
-				//motorLeft.stop();
-				//motorRight.stop();
-				/*while (1)
-				{
-				BLUETOOTH.println(" :) ");
-				BLUETOOTH.println(path);
-				}
-				*/
-				//motorLeft.stop();
-				//motorRight.stop();
-				//while (1);
-				delay(10);
-				LED_LEFT_OFF;
-				LED_RIGHT_OFF;
-				//ENABLE_STANDBY;
-				simplifyPath();
-				while (1);
-
-			}
-		}
-		// T Junction
-		/*if (foundLeft && foundRight && !foundStraight)
-		{
-			path[pathCounter++] = 'T';
-			BLUETOOTH.println(path[pathCounter - 1]);
-			foundLeft = 1;
-		}*/
-
-		// L 90 Junction
-		//if (foundLeft && !foundRight && foundStraight)
-		//{
-		//	LED_RIGHT_ON;
-		//	LED_LEFT_ON;
-		//	path[pathCounter++] = 'C';
-		//	BLUETOOTH.println(path[pathCounter - 1]);
-		//	foundLeft = 1;
-		//}
-
-		//// R 90 Junction
-		//if (!foundLeft && foundRight && foundStraight)
-		//{
-		//	LED_RIGHT_ON;
-		//	LED_LEFT_ON;
-		//	path[pathCounter++] = 'D';
-		//	BLUETOOTH.println(path[pathCounter - 1]);
-		//	foundRight = 1;
-		//}
-
-
-		char direction = selectTurn(foundLeft, foundRight, foundStraight);
-		turn(direction, SPEED_TURN, 150);
-
-		// L 90 Turn OR R 90 Turn
-		/*if ((foundLeft || foundRight) && !foundStraight)
-		{*/
-			path[pathCounter++] = direction;
-			BLUETOOTH.println(path[pathCounter - 1]);
-		//}
-
-
-	}
-}
-
-//
-////unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-//	//// C - Left 90 Junction
-//	//// D - Right 90 Junction
-//	//// T - Point Junction
-//	//// L - Left 90
-//	//// R - Right 90
-//
-//	////followSegment();
-//
-//	//position_ = readSensors();
-//
-//	//// Starting of intersection
-//	//if (FOUND_LEFT())
-//	//	foundLeft = 1;
-//	//if (FOUND_RIGHT())
-//	//	foundRight = 1;
-//
-//	//if (foundLeft || foundRight)
-//	//{
-//	//	/*BLUETOOTH.print("foundLeft");
-//	//	BLUETOOTH.println(foundLeft);
-//
-//	//	BLUETOOTH.print("foundRight");
-//	//	BLUETOOTH.println(foundRight);
-//	//	*/
-//
-//	//	//motorLeft.setSpeed(-512);
-//	//	//motorRight.setSpeed(-512);
-//
-//	//	//delay(30);
-//
-//	//	position_ = readSensors();
-//
-//	//	if (foundLeft && foundRight)
-//	//	{
-//
-//	//		LED_LEFT_ON;
-//	//		LED_RIGHT_ON;
-//
-//	//		while (FOUND_LEFT() || FOUND_RIGHT())
-//	//			position_ = readSensors();
-//
-//	//		//delay(30);
-//	//		//position_ = readSensors();
-//
-//	//		if (FOUND_STRAIGHT())
-//	//		{
-//	//			// Switch to MODE which simplifies path
-//	//			MODE = 1;
-//
-//	//			path[pathCounter++] = 'J';
-//	//			path[pathCounter] = '\0';
-//
-//
-//	//			motorLeft.write(-1024);
-//	//			motorRight.write(-1024);
-//	//			delay(50);
-//	//			DISABLE_STANDBY;
-//
-//	//			BLUETOOTH.println(path);
-//	//			BLUETOOTH.println("END OF MAPPING MODE");
-//
-//	//			delay(1000);
-//	//		}
-//	//		else
-//	//		{
-//	//			path[pathCounter++] = 'T';
-//	//			BLUETOOTH.println(path[pathCounter - 1]);
-//	//			foundLeft = 1;
-//	//		}
-//
-//	//	}
-//
-//	//	else if (foundLeft && !foundRight)
-//	//	{
-//	//		while (FOUND_LEFT())
-//	//		{
-//	//			position_ = readSensors();
-//	//		}
-//	//		if (FOUND_STRAIGHT())
-//	//		{
-//	//			path[pathCounter++] = 'C';
-//	//			BLUETOOTH.println(path[pathCounter - 1]);
-//	//			foundLeft = 1;
-//	//		}
-//	//		else
-//	//		{
-//	//			path[pathCounter++] = 'L';
-//	//			BLUETOOTH.println(path[pathCounter - 1]);
-//	//			foundLeft = 1;
-//	//		}
-//
-//	//	}
-//
-//	//	else if (foundRight && !foundLeft)
-//	//	{
-//	//		while (FOUND_RIGHT())
-//	//		{
-//	//			position_ = readSensors();
-//	//		}
-//	//		if (!FOUND_STRAIGHT())
-//	//		{
-//
-//	//			path[pathCounter++] = 'R';
-//	//			BLUETOOTH.println(path[pathCounter - 1]);
-//	//			foundRight = 1;
-//	//		}
-//
-//	//		else
-//	//		{
-//	//			path[pathCounter++] = 'D';
-//	//			BLUETOOTH.println(path[pathCounter - 1]);
-//	//			foundRight = 1;
-//
-//	//		}
-//	//	}
-//
-//
-//
-//		//LED_ON;
-//		//delay(120);
-//		////motorLeft.write(-10);
-//		////motorRight.write(-10);
-//
-//
-//		////delay(30);
-//		//LED_OFF;
-//
-//		//position_ = readSensors();
-//
-//		// appx in the middle of intersection
-//		/*if (ON_LINE(sensorValues[0]))
-//			foundLeft = 1;
-//			if (ON_LINE(sensorValues[7]))
-//			foundRight = 1;
-//
-//			delay(OVERSHOOT_LINE_TIME / 2);*/
-//
-//		//Ahead of intersection
-//		/*if (ON_LINE(sensorValues[0]))
-//			foundLeft = 1;
-//			if (ON_LINE(sensorValues[7]))
-//			foundRight = 1;*/
-//
-//		//if ((ON_LINE(sensorValues[2]) || ON_LINE(sensorValues[3])) && (ON_LINE(sensorValues[4]) || ON_LINE(sensorValues[5])))
-//		//foundStraight = 1;
-//
-//		////'+' Junction Stop the Motors
-//		//if (foundLeft && foundRight && foundStraight)
-//		//{
-//		//	path[pathCounter++] = 'J';
-//		//	path[pathCounter] = '\0';
-//		//	motorLeft.write(-1024);
-//		//	motorRight.write(-1024);
-//		//	delay(20);
-//		//	DISABLE_STANDBY;
-//		//	BLUETOOTH.println(path[pathCounter - 1]);
-//		//	BLUETOOTH.println(path);
-//		//	while (1)
-//		//		LED_ON;
-//		//}
-//		//if (!foundStraight && foundLeft && foundRight)
-//		//{
-//		//	path[pathCounter++] = 'T';
-//		//	BLUETOOTH.println(path[pathCounter - 1]);
-//		//	foundLeft = 1;
-//		//}
-//
-//		/*char direction = selectTurn(foundLeft, foundRight, foundStraight);
-//		turn(direction, SPEED_TURN, 235);*/
-//
-//		///*motorLeft.stop();
-//		//motorRight.stop();
-//
-//		//while (1);*/
-//		//
-//		////left 90 Junction
-//		//if (foundStraight)
-//		//{
-//		//	// Left 90 Junction
-//		//	if (foundLeft && !foundRight)
-//		//		// T point Junction
-//		//	{
-//		//		path[pathCounter++] = 'C';
-//		//		BLUETOOTH.println(path[pathCounter - 1]);
-//		//	}
-//		//	// Right 90 Junction
-//		//	if (foundRight && !foundLeft)
-//		//	{
-//
-//		//		path[pathCounter++] = 'D';
-//		//		BLUETOOTH.println(path[pathCounter - 1]);
-//		//	}
-//		//}
-//		//
-//
-//		//else if (foundLeft || foundRight && !foundStraight)
-//		//{
-//		//	path[pathCounter++] = direction;
-//		//	BLUETOOTH.println(path[pathCounter - 1]);
-//		//}
-//
-//	//}
 
 void followSegment()
 {
@@ -708,7 +412,6 @@ void followSegment()
 			Serial.print(proportional);
 			Serial.println("  ");
 		}
-
 
 		if (control > SPEED_MAX)
 			control = SPEED_MAX;
