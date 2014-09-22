@@ -13,9 +13,9 @@
 #define KD	80
 
 // MAX SPEED
-#define SPEED_MAX 2048
+int SPEED_MAX = 2048;
 #define SPEED_CALIBRATE 786
-#define SPEED_TURN 800
+#define SPEED_TURN 1500
 
 // Enable for white line on black background
 #define WHITE_ON_BLACK 1
@@ -68,7 +68,7 @@ QTRSensorsRC qtrRC(sensorPins, NUMBER_OF_SENSORS, TIMEOUT, EMITTER_PIN);
 
 unsigned char FOUND_LEFT()
 {
-	return (ON_LINE(sensorValues[0]	) && ON_LINE(sensorValues[1]) && ON_LINE(sensorValues[2]) && ON_LINE(sensorValues[3]) && ON_LINE(sensorValues[4]));
+	return (ON_LINE(sensorValues[0]) && ON_LINE(sensorValues[1]) && ON_LINE(sensorValues[2]) && ON_LINE(sensorValues[3]) && ON_LINE(sensorValues[4]));
 }
 
 unsigned char FOUND_RIGHT()
@@ -165,7 +165,7 @@ void setup()
 	analogWriteResolution(12);
 
 	//BLUETOOTH.begin(9600);
-	
+
 	LED_LEFT_ON;
 	LED_RIGHT_ON;
 	initializeBot();
@@ -230,13 +230,13 @@ void loop()
 {
 
 	//delay(500);
-	
+
 	//followSegment();
 	//followSegment();
 	// MODE 0 for mapping mode
-		runMappingMode();
+	runMappingMode();
 
-	
+
 }
 
 void simplifyPath()
@@ -252,16 +252,16 @@ void simplifyPath()
 	{
 		switch (path[i])
 		{
-		case 'D':
+		/*case 'D':
 			simplifiedPath[sCounter++] = 'C';
 			break;
 		case 'C':
 			simplifiedPath[sCounter++] = 'D';
-			break;
+			break;*/
 		case 'L':
 			simplifiedPath[sCounter++] = 'R';
 			break;
-		case 'R': 
+		case 'R':
 			simplifiedPath[sCounter++] = 'L';
 			break;
 		}
@@ -270,26 +270,50 @@ void simplifyPath()
 	}
 
 
+
 	simplifiedPath[sCounter++] = 'J';
 	simplifiedPath[sCounter] = '\0';
-	sCounter = 0;
 
-	/*while (1)
+	for (i = 3; i < sCounter; i++)
 	{
+		if (simplifiedPath[i] == 'L' && simplifiedPath[i + 1] == 'L' && simplifiedPath[i + 2] == 'L' && simplifiedPath[i + 3] == 'L' && simplifiedPath[i + 4] == 'R')
+		{
+			simplifiedPath[i] = 'R';
+			simplifiedPath[i + 1] = 'R';
+			simplifiedPath[i + 2] = 'L';
+			simplifiedPath[i + 3] = 'O';
+			simplifiedPath[i + 4] = 'O';
+
+
+		}
+		if (simplifiedPath[i] == 'R' && simplifiedPath[i + 1] == 'R' && simplifiedPath[i + 2] == 'R' && simplifiedPath[i + 3] == 'R' && simplifiedPath[i + 4] == 'L')
+		{
+			simplifiedPath[i] = 'L';
+			simplifiedPath[i + 1] = 'L';
+			simplifiedPath[i + 2] = 'R';
+			simplifiedPath[i + 3] = 'O';
+			simplifiedPath[i + 4] = 'O';
+
+
+		}
+	}
+	sCounter = 0;
+	/*while (1)
+		{
 
 		BLUETOOTH.println(path);
 		BLUETOOTH.println(" :) ");
 		BLUETOOTH.println(simplifiedPath);
-	}*/
+		}*/
 
 	/*LED_LEFT_ON;
 	LED_RIGHT_ON;*/
 
 	while (1)
 	{
-		
-		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
 
+		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
+		SPEED_MAX = 2040;
 		followSegment();
 
 		position_ = readSensors();
@@ -303,14 +327,16 @@ void simplifyPath()
 		if (foundLeft || foundRight)
 		{
 			BLUETOOTH.println(simplifiedPath[sCounter]);
-			turn(simplifiedPath[sCounter++], SPEED_TURN, 200);
+			/*if (simplifiedPath[sCounter] == 'O')
+				sCounter++;*/
+			turn(simplifiedPath[sCounter++], SPEED_TURN, 150);
 
 		}
 
 		if (simplifiedPath[sCounter] == 'J')
 		{
-			motorLeft.write(-1024);
-			motorRight.write(-1024);
+			//motorLeft.write(-1024);
+			//motorRight.write(-1024);
 			BLUETOOTH.println("END OF GAME !!");
 			delay(50);
 			DISABLE_STANDBY;
@@ -335,8 +361,8 @@ void runMappingMode()
 
 		if (flag == 0)
 		{
-			turn('R', SPEED_TURN, 300);
-			path[pathCounter++] = 'D';
+			turn('R', SPEED_TURN, 130);
+			path[pathCounter++] = 'R';
 			BLUETOOTH.println(path[pathCounter - 1]);
 			flag = 1;
 			return;
@@ -358,86 +384,92 @@ void runMappingMode()
 		if (FOUND_RIGHT())
 			foundRight = 1;
 
-		delay(40);
-		position_ = readSensors();
-
-		if (FOUND_STRAIGHT())
-			foundStraight = 1;
-
-		if (foundLeft && foundRight && foundStraight)
+		if (foundLeft && foundRight)
 		{
-			path[pathCounter++] = 'J';
-			path[pathCounter] = '\0';
 
+			delay(40);
+			position_ = readSensors();
 
-			//motorLeft.write(-1024);
-			//motorRight.write(-1024);
-			delay(20);
-			//DISABLE_STANDBY;
+			if (FOUND_STRAIGHT())
+				foundStraight = 1;
 
-			LED_LEFT_ON;
-			LED_RIGHT_ON;
-
-			/*BLUETOOTH.println(" :) ");
-			BLUETOOTH.println(path);
-			BLUETOOTH.println("END OF MAPPING MODE");*/
-
-			/*DISABLE_STANDBY;
-			motorLeft.stop();
-			motorRight.stop();*/
-			/*while (1)
+			if (foundLeft && foundRight && foundStraight)
 			{
+				path[pathCounter++] = 'J';
+				path[pathCounter] = '\0';
+
+
+				//motorLeft.write(-1024);
+				//motorRight.write(-1024);
+				//delay(20);
+				//DISABLE_STANDBY;
+
+				LED_LEFT_ON;
+				LED_RIGHT_ON;
+
+				/*BLUETOOTH.println(" :) ");
+				BLUETOOTH.println(path);
+				BLUETOOTH.println("END OF MAPPING MODE");*/
+
+				//DISABLE_STANDBY;
+				//motorLeft.stop();
+				//motorRight.stop();
+				/*while (1)
+				{
 				BLUETOOTH.println(" :) ");
 				BLUETOOTH.println(path);
-			}*/
+				}
+				*/
+				//motorLeft.stop();
+				//motorRight.stop();
+				//while (1);
+				delay(10);
+				LED_LEFT_OFF;
+				LED_RIGHT_OFF;
+				//ENABLE_STANDBY;
+				simplifyPath();
+				while (1);
 
-			//motorLeft.stop();
-			//motorRight.stop();
-				//delay(50);
-			LED_LEFT_OFF;
-			LED_RIGHT_OFF;
-			simplifyPath();
-			while (1);
+			}
 		}
-
 		// T Junction
-		if (foundLeft && foundRight && !foundStraight)
+		/*if (foundLeft && foundRight && !foundStraight)
 		{
 			path[pathCounter++] = 'T';
 			BLUETOOTH.println(path[pathCounter - 1]);
 			foundLeft = 1;
-		}
+		}*/
 
 		// L 90 Junction
-		if (foundLeft && !foundRight && foundStraight)
-		{
-			LED_RIGHT_ON;
-			LED_LEFT_ON;
-			path[pathCounter++] = 'C';
-			BLUETOOTH.println(path[pathCounter - 1]);
-			foundLeft = 1;
-		}
+		//if (foundLeft && !foundRight && foundStraight)
+		//{
+		//	LED_RIGHT_ON;
+		//	LED_LEFT_ON;
+		//	path[pathCounter++] = 'C';
+		//	BLUETOOTH.println(path[pathCounter - 1]);
+		//	foundLeft = 1;
+		//}
 
-		// R 90 Junction
-		if (!foundLeft && foundRight && foundStraight)
-		{
-			LED_RIGHT_ON;
-			LED_LEFT_ON;
-			path[pathCounter++] = 'D';
-			BLUETOOTH.println(path[pathCounter - 1]);
-			foundRight = 1;
-		}
+		//// R 90 Junction
+		//if (!foundLeft && foundRight && foundStraight)
+		//{
+		//	LED_RIGHT_ON;
+		//	LED_LEFT_ON;
+		//	path[pathCounter++] = 'D';
+		//	BLUETOOTH.println(path[pathCounter - 1]);
+		//	foundRight = 1;
+		//}
 
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);
-		turn(direction, SPEED_TURN, 300);
+		turn(direction, SPEED_TURN, 150);
 
 		// L 90 Turn OR R 90 Turn
-		if ((foundLeft || foundRight) && !foundStraight)
-		{
+		/*if ((foundLeft || foundRight) && !foundStraight)
+		{*/
 			path[pathCounter++] = direction;
 			BLUETOOTH.println(path[pathCounter - 1]);
-		}
+		//}
 
 
 	}
