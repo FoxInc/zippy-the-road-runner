@@ -241,7 +241,7 @@ void runMappingMode()
 		
 
 		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-
+		turn('S', 512, 10);
 		position_ = readSensors();
 
 		if (FOUND_LEFT())
@@ -251,7 +251,7 @@ void runMappingMode()
 
 		if (foundLeft && foundRight)
 		{
-			turn('S', 1024, 80);
+			turn('S', 512, 60);
 
 			position_ = readSensors();
 
