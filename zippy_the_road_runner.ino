@@ -13,9 +13,11 @@
 #define KD	80
 
 // MAX SPEED
-int SPEED_MAX = 2048;
+int SPEED_MAX = 1748;
 #define SPEED_CALIBRATE 786
-#define SPEED_TURN 1024
+#define SPEED_TURN 1200
+
+#define DELAY_TURN 170
 
 // Enable for white line on black background
 #define WHITE_ON_BLACK 1
@@ -32,7 +34,12 @@ int SPEED_MAX = 2048;
 #define ENABLE_STANDBY digitalWrite(MOTOR_DRIVER_PIN_STANDBY, HIGH)
 #define DISABLE_STANDBY digitalWrite(MOTOR_DRIVER_PIN_STANDBY, LOW)
 
+// SWITCH 17 - 18 19 - 20 red leds
+
 // LED Settings
+#define RED_LED_LEFT 19
+#define RED_LED_RIGHT 20
+
 #define LED_LEFT 16
 #define LED_RIGHT 15
 #define LED_LEFT_ON digitalWrite(LED_LEFT, HIGH)
@@ -41,13 +48,16 @@ int SPEED_MAX = 2048;
 #define LED_RIGHT_OFF digitalWrite(LED_RIGHT, LOW)
 
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 motor motorLeft, motorRight;
 
 // Sensor configs
 unsigned char sensorPins[] = { 33, 32, 31, 30, 29, 28, 27, 26 };
 unsigned short sensorValues[NUMBER_OF_SENSORS];
+
+unsigned char sensorFrontPin[] = { 24 };
+unsigned short sensorValueFront[1];
 
 // PID Variables
 float position_ = 0, proportional = 0, derivative = 0, integral = 0, lastProportional = 0;
@@ -65,6 +75,7 @@ unsigned char flag = 0;
 // Initialize QTR8RC Sensor Array with sensor pins array
 // and number of sensors as second parameter
 QTRSensorsRC qtrRC(sensorPins, NUMBER_OF_SENSORS, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrRCFront(sensorFrontPin, 1, TIMEOUT);
 
 unsigned char FOUND_LEFT()
 {
@@ -78,7 +89,7 @@ unsigned char FOUND_RIGHT()
 
 unsigned char FOUND_STRAIGHT()
 {
-	return((ON_LINE(sensorValues[2]) && ON_LINE(sensorValues[3])) && (ON_LINE(sensorValues[4]) && ON_LINE(sensorValues[5])));
+	return((ON_LINE(sensorValues[2]) || ON_LINE(sensorValues[3])) && (ON_LINE(sensorValues[4]) || ON_LINE(sensorValues[5])));
 }
 
 char selectTurn(unsigned char found_left, unsigned char found_right, unsigned char found_straight)
@@ -138,6 +149,19 @@ int readSensors()
 	return pos;
 }
 
+int readFrontSensors()
+{
+	int pos;
+	/*if (WHITE_ON_BLACK == 1)
+		pos = qtrRCFront.readLine(sensorValueFront, QTR_EMITTERS_ON, true);
+
+	else*/
+		pos = qtrRCFront.readLine(sensorValueFront);
+
+	return pos;
+
+}
+
 void setup()
 {
 	if (DEBUG_MODE == 1)
@@ -154,6 +178,8 @@ void setup()
 
 	pinMode(LED_LEFT, OUTPUT);
 	pinMode(LED_RIGHT, OUTPUT);
+	pinMode(RED_LED_LEFT, OUTPUT);
+	pinMode(RED_LED_RIGHT, OUTPUT);
 
 	motorLeft.setPins(5, 6, 4);
 	motorRight.setPins(8, 9, 10);
@@ -194,6 +220,7 @@ void initializeBot()
 		// Emitters off
 		//else
 		qtrRC.calibrate();
+		qtrRCFront.calibrate();
 
 	}
 
@@ -222,10 +249,11 @@ void showSensorValues()
 		Serial.print(' ');
 	}
 
+	Serial.print(" F ");
+	Serial.println(sensorValueFront[0]);
 	Serial.println();
 
 }
-
 
 void loop()
 {
@@ -238,10 +266,20 @@ void runMappingMode()
 	{
 		followSegment();
 
-		
+		/*if (flag == 0)
+		{
+			path[pathCounter++] = 'L';
+			BLUETOOTH.println(path[pathCounter - 1]);
+			turn('L', SPEED_TURN, DELAY_TURN);
+			flag = 1;
+		}*/
 
 		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-		turn('S', 512, 10);
+		
+		turn('S', 1024, 10);
+		position_ = readSensors();
+		
+		delay(20);
 		position_ = readSensors();
 
 		if (FOUND_LEFT())
@@ -251,30 +289,41 @@ void runMappingMode()
 
 		if (foundLeft && foundRight)
 		{
-			turn('S', 512, 60);
+			turn('S', 1024, 20);
+			readFrontSensors();
 
-			position_ = readSensors();
+			if (ON_LINE(sensorValueFront[0]))
+				foundStraight = 1;
 
-			if (FOUND_STRAIGHT())
+			if (foundStraight)
+			{
+				LED_LEFT_ON;
+				LED_RIGHT_ON;
+			}
+			//position_ = readSensors();
+
+			if (foundStraight)
 			{
 				path[pathCounter++] = 'J';
 				path[pathCounter] = '\0';
 
 				LED_LEFT_ON;
 				LED_RIGHT_ON;
+				//DISABLE_STANDBY;
 				delay(20);
-				LED_LEFT_OFF;
-				LED_RIGHT_OFF;
 				simplifyPath();
 
 			}
 		}
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);
-		turn(direction, SPEED_TURN, 200);
+		turn(direction, SPEED_TURN, DELAY_TURN);
 
 		path[pathCounter++] = direction;
 		BLUETOOTH.println(path[pathCounter - 1]);
+	
+		LED_RIGHT_ON;
+		LED_LEFT_OFF;
 	}
 }
 
@@ -283,6 +332,9 @@ void simplifyPath()
 {
 	sCounter = 0;
 	int i;
+
+	digitalWrite(RED_LED_LEFT, HIGH);
+	digitalWrite(RED_LED_RIGHT, HIGH);
 
 	// Add the last square's turns as it is
 	for (i = 1; i <= 3; i++)
@@ -340,14 +392,20 @@ void simplifyPath()
 	/*LED_LEFT_ON;
 	LED_RIGHT_ON;*/
 
+
+	LED_LEFT_OFF;
+	LED_RIGHT_OFF;
+
 	while (1)
 	{
 
 		unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
-		//SPEED_MAX = 2500;
+		//SPEED_MAX = 2300;
 		followSegment();
 
 		position_ = readSensors();
+		//delay(20);
+		//position_ = readSensors();*/
 
 		// Starting of intersection
 		if (FOUND_LEFT())
@@ -360,7 +418,7 @@ void simplifyPath()
 			BLUETOOTH.println(simplifiedPath[sCounter]);
 			if (simplifiedPath[sCounter] == 'O')
 				sCounter++;
-			turn(simplifiedPath[sCounter++], SPEED_TURN, 200);
+			turn(simplifiedPath[sCounter++], SPEED_TURN, DELAY_TURN);
 
 		}
 
@@ -377,11 +435,12 @@ void simplifyPath()
 			{
 				LED_LEFT_ON;
 				LED_RIGHT_ON;
+				digitalWrite(RED_LED_LEFT, LOW);
+				digitalWrite(RED_LED_RIGHT, LOW);
 			}
 		}
 	}
 }
-
 
 
 void followSegment()
@@ -389,6 +448,7 @@ void followSegment()
 	while (1)
 	{
 		position_ = readSensors();
+		readFrontSensors();
 
 		if (FOUND_LEFT() || FOUND_RIGHT())
 			break;
@@ -404,7 +464,7 @@ void followSegment()
 
 		control = proportional *KP + integral*KI + derivative*KD;
 
-		if (DEBUG_MODE == 1)
+		if (DEBUG_MODE == 2)
 		{
 			Serial.print("Control  ");
 			Serial.print(control);

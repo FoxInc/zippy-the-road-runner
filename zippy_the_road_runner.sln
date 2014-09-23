@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zippy_the_road_runner", "zippy_the_road_runner.vcxproj", "{68FC3A55-C0F7-4FA9-95E1-5368D7F05420}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QTRRCEXAMPLE", "..\QTRRCEXAMPLE\QTRRCEXAMPLE.vcxproj", "{6DAE3403-D5A6-4C0C-9AAD-B73090D0C65C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68FC3A55-C0F7-4FA9-95E1-5368D7F05420}.Debug|Win32.ActiveCfg = Debug|Win32
+		{68FC3A55-C0F7-4FA9-95E1-5368D7F05420}.Debug|Win32.Build.0 = Debug|Win32
+		{68FC3A55-C0F7-4FA9-95E1-5368D7F05420}.Release|Win32.ActiveCfg = Release|Win32
+		{68FC3A55-C0F7-4FA9-95E1-5368D7F05420}.Release|Win32.Build.0 = Release|Win32
+		{6DAE3403-D5A6-4C0C-9AAD-B73090D0C65C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6DAE3403-D5A6-4C0C-9AAD-B73090D0C65C}.Debug|Win32.Build.0 = Debug|Win32
+		{6DAE3403-D5A6-4C0C-9AAD-B73090D0C65C}.Release|Win32.ActiveCfg = Release|Win32
+		{6DAE3403-D5A6-4C0C-9AAD-B73090D0C65C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

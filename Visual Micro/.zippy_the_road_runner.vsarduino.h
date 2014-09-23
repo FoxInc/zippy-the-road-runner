@@ -47,6 +47,7 @@ unsigned char FOUND_STRAIGHT();
 char selectTurn(unsigned char found_left, unsigned char found_right, unsigned char found_straight);
 void turn(char direction, unsigned int speed, unsigned short delayTime);
 int readSensors();
+int readFrontSensors();
 //
 void initializeBot();
 void showSensorValues();
